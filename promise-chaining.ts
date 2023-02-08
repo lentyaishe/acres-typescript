@@ -5,6 +5,20 @@ function waitFor(waitInMillis: number): Promise<void> {
             return;
         }
         setTimeout(() => {
+            switch (waitInMillis) {
+                case 500:
+                    console.log(`${getTimestamp()}: First return`);
+                    break;
+                case 1000:
+                    console.log(`${getTimestamp()}: Second return`);
+                    break;
+                case 2000:
+                    console.log(`${getTimestamp()}: Third return`);
+                    break;
+                default:
+                    console.warn("Unknown period to wait");
+                    break;
+            }
             resolve();
         }, waitInMillis);
     });
@@ -20,13 +34,10 @@ function promiseHell(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
         waitFor(500)
             .then(() => {
-                console.log(`${getTimestamp()}: First return`);
                 waitFor(1000)
                     .then(() => {
-                        console.log(`${getTimestamp()}: Second return`);
                         waitFor(2000)
                             .then(() => {
-                                console.log(`${getTimestamp()}: Third return`);
                                 resolve();
                             })
                             .catch((error) => {
@@ -47,15 +58,12 @@ function promiseChained(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
         waitFor(500)
             .then(() => {
-                console.log(`${getTimestamp()}: First return`);
                 return waitFor(1000);
             })
             .then(() => {
-                console.log(`${getTimestamp()}: Second return`);
                 return waitFor(2000);
             })
             .then(() => {
-                console.log(`${getTimestamp()}: Third return`);
                 resolve();
             })
             .catch((error) => {
@@ -64,12 +72,71 @@ function promiseChained(): Promise<void> {
     });
 }
 
-promiseHell()
-    .then(() => {
-        return promiseChained();
-    })
+function asyncAwaitedPromises(): Promise<void> {
+    return new Promise<void>(async (resolve, reject) => {
+        try {
+            await waitFor(500);
+            await waitFor(1000);
+            await waitFor(2000);
+            resolve();
+        }
+        catch (error) {
+            reject(error); // bubbling
+        }
+    });
+}
+
+function parallelPromises(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+        Promise.all([
+            waitFor(500),
+            waitFor(1000),
+            waitFor(2000)
+        ])
+            .then(() => {
+                console.log(`${getTimestamp()}: All complete`);
+                resolve();
+            })
+            .catch((error) => {
+                reject(error);
+            });
+        
+        // await Promise.all([
+        //     waitFor(500),
+        //     waitFor(1000)
+        // ]);
+
+    });
+}
+
+function asyncAwaitRejectedPromise(): Promise<void> {
+    return new Promise<void>(async (resolve, reject) => {
+        try {
+            await waitFor(10500);
+        }
+        catch (error) {
+            reject(error);
+            return;
+        }
+        console.log(`${getTimestamp()}: Async await complete`);
+        resolve();
+    });
+}
+
+asyncAwaitRejectedPromise()
     .catch((error) => {
         console.error(error);
-    })
+    });
 
-console.log(`${getTimestamp()}: Forth return`);
+// promiseHell()
+//     .then(() => {
+//         return promiseChained();
+//     })
+//     .then(() => {
+//         return parallelPromises();
+//     })
+//     .catch((error) => {
+//         console.error(error);
+//     });
+
+// console.log(`${getTimestamp()}: Forth return`);
